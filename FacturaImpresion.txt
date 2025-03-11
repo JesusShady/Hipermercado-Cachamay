@@ -1,0 +1,20 @@
+HIPERMERCADO CACHAMAY
+RIF: J-123456789
+Teléfono: 0414-0463588
+----------------------------------------
+ID Hipermercado: J-12345678-9
+Número Factura: 3
+Fecha: 11/03/2025
+Cliente: Luisa Marcano
+----------------------------------------
+Producto: Jugo de Naranja Hit 1L
+Cantidad: 1
+Precio Unitario: 1.00
+----------------------------------------
+Producto: Leche en Polvo Nestl? 400Gr
+Cantidad: 1
+Precio Unitario: 2.00
+----------------------------------------
+Pago Bruto: 3.00
+Porcentaje IVA: 0.16
+Pago Total: 3.48
