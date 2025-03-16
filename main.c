@@ -20,8 +20,8 @@ TELEFONO: 0414-0463588 //// PROYECTO CREADO POR JESUS COLMENARES //// Universida
 #include <uxtheme.h>
 #include <commctrl.h>
 #include <sys/stat.h>
+#include <direct.h>
 
-#define _WIN32_WINNT 0x0603
 
 #define CAJAS 5
 #define IVA 0.16
@@ -201,7 +201,7 @@ typedef struct estructura_clientes{
     wchar_t nombre[150];
     wchar_t apellido[150];
     wchar_t direccion[200];
-    int telefono;
+    wchar_t telefono[30];
     int cantidad_compras;
 } datos_clientes;
 
@@ -212,7 +212,7 @@ typedef struct estructuras_trabajador{
     wchar_t apellido[50];
     wchar_t direccion[100];
     wchar_t cargo[100];
-    int telefono;
+    wchar_t telefono[30];
 } datos_trabajador;
 
 typedef struct estructura_cajas{
@@ -280,17 +280,6 @@ int VerificarCliente(const wchar_t *verificador) {
     return 0; // Cédula única
 }
 
-int VerificarEmpleado(const wchar_t *verificador) {
-    int cedula_verificar = _wtoi(verificador);
-
-    for (int i = 0; i < cant_empleados; i++) {
-        if(d_empleados[i].cedula_trabajador == cedula_verificar){
-            return 1;
-        }
-    }
-    return 0; // Cédula única
-}
-
 int VerificarCaja(const int numero, HWND VentCajas) {
     for (int i = 0; i < cant_cajas; i++) {
         if (d_cajas[i].numero_caja == numero) {
@@ -309,7 +298,7 @@ void CargarProductos() {
     setlocale(LC_NUMERIC, "C");
 
     // Abrir el archivo "productos.dat" en modo lectura con codificación UTF-8
-    FILE *archivo = _wfopen(L"productos.dat", L"r, ccs=UTF-8");
+    FILE *archivo = _wfopen(L"Datos/productos.dat", L"r, ccs=UTF-8");
     if (!archivo) {
         fwprintf(stderr, L"Error al abrir el archivo productos.dat.\n");
         return;
@@ -357,7 +346,7 @@ void CargarClientes(){
     setlocale(LC_NUMERIC, "C");
 
     // Abrir el archivo "clientes.dat" en modo lectura con codificación UTF-8
-    FILE *archivo = _wfopen(L"clientes.dat", L"r, ccs=UTF-8");
+    FILE *archivo = _wfopen(L"Datos/clientes.dat", L"r, ccs=UTF-8");
     if (!archivo) {
         fwprintf(stderr, L"Error al abrir el archivo clientes.dat.\n");
         return;
@@ -388,9 +377,11 @@ void CargarClientes(){
         wcscpy_s(d_clientes[cant_clientes].direccion, 200, bufferDireccion);
         
         // Leer el teléfono
-        if(fwscanf(archivo, L"Telefono: %d\n", &d_clientes[cant_clientes].telefono) != 1)
+        wchar_t bufferTelefono[30];
+        if(fwscanf(archivo, L"Telefono: %30[^\n]\n", bufferTelefono)!= 1)
             break;
-        
+        wcscpy_s(d_clientes[cant_clientes].telefono, 200, bufferTelefono);
+
         // Leer la línea separadora (por ejemplo: "---------------------")
         wchar_t separador[30];
         fwscanf(archivo, L"%29[^\n]\n", separador);
@@ -402,7 +393,7 @@ void CargarClientes(){
 }
 
 void CargarEmpleado(){
-    FILE *archivo = fopen("empleados.dat", "r");
+    FILE *archivo = fopen("Datos/empleados.dat", "r");
     if (!archivo) {
         // No existe el archivo o hubo error al abrir
         return;
@@ -439,8 +430,10 @@ void CargarEmpleado(){
             break;
         wcscpy_s(d_empleados[cant_empleados].cargo, 100, cargo);
         
-        if(fscanf(archivo, "Telefono: %d\n", &d_empleados[cant_empleados].telefono) != 1)
+        wchar_t telefono[30];
+        if(fwscanf(archivo, L"Telefono: %30[^\n]\n", telefono) != 1)
             break;
+        wcscpy_s(d_empleados[cant_empleados].telefono, 30, telefono);
         
         // Leer la línea separadora (por ejemplo: "---------------------")
         wchar_t separador[30];
@@ -457,7 +450,7 @@ void CargarCajas(){
     setlocale(LC_NUMERIC, "C");
 
     // Abrir el archivo en modo lectura, utilizando codificación UTF-8
-    FILE *archivo = _wfopen(L"cajas.dat", L"r, ccs=UTF-8");
+    FILE *archivo = _wfopen(L"Datos/cajas.dat", L"r, ccs=UTF-8");
     if (!archivo) {
         fwprintf(stderr, L"Error al abrir el archivo cajas.dat.\n");
         return;
@@ -501,8 +494,10 @@ void CargarCajas(){
             break;
         wcscpy_s(d_cajas[cant_cajas].encargador.direccion, 100, bufferDireccion);
         
-        if (fwscanf(archivo, L"Telefono Encargado: %d\n", &d_cajas[cant_cajas].encargador.telefono) != 1)
+        wchar_t bufferTelefono[30];
+        if (fwscanf(archivo, L"Telefono Encargado: %30[^\n]\n", bufferTelefono) != 1)
             break;
+        wcscpy_s(d_cajas[cant_cajas].encargador.telefono, 30, bufferTelefono);
         
         // Leer la línea separadora (por ejemplo: "---------------------")
         wchar_t separador[30];
@@ -520,7 +515,7 @@ void CargarFacturas() {
     setlocale(LC_NUMERIC, "C");
 
     // Abrir el archivo con codificación UTF-8
-    FILE *archivo = _wfopen(L"facturas.dat", L"r, ccs=UTF-8");
+    FILE *archivo = _wfopen(L"Datos/facturas.dat", L"r, ccs=UTF-8");
     if (!archivo) {
         wprintf(L"Error al abrir el archivo facturas.dat.\n");
         return;
@@ -709,8 +704,7 @@ void ClientesEnListView(HWND ListViewCliente){
         ListView_SetItemText(ListViewCliente, index, 3, d_clientes[i].direccion);
 
         // Quinta columna: Teléfono del cliente
-        swprintf_s(buffer, 128, L"%d", d_clientes[i].telefono);
-        ListView_SetItemText(ListViewCliente, index, 4, buffer);
+        ListView_SetItemText(ListViewCliente, index, 4, d_clientes[i].telefono);
     }
 }
 
@@ -783,8 +777,7 @@ void EmpleadosEnListView(HWND ListViewEmpleado){
         ListView_SetItemText(ListViewEmpleado, index, 5, d_empleados[i].cargo);
 
         // Séptima columna: Teléfono del empleado
-        swprintf_s(buffer, 128, L"%d", d_empleados[i].telefono);
-        ListView_SetItemText(ListViewEmpleado, index, 6, buffer);
+        ListView_SetItemText(ListViewEmpleado, index, 6, d_empleados[i].telefono);
     }
 }
 
@@ -1050,7 +1043,7 @@ LRESULT CALLBACK VentanaPrincipal(HWND vent, UINT msg, WPARAM wParam, LPARAM lPa
                 }
                 
                 case BTN_VENTAS: {
-                    HWND VentVentas = CreateWindowEx(0, L"CL_VentanaVentas", L"Ventas", WS_OVERLAPPEDWINDOW, 15,15,950,700,NULL, NULL, instancia, NULL);
+                    HWND VentVentas = CreateWindowEx(0, L"CL_VentanaVentas", L"Ventas", WS_OVERLAPPEDWINDOW, 15,15,1250,700,NULL, NULL, instancia, NULL);
                 ShowWindow(VentVentas,SW_SHOW);
                 UpdateWindow(VentVentas);
                     break;
@@ -1059,6 +1052,7 @@ LRESULT CALLBACK VentanaPrincipal(HWND vent, UINT msg, WPARAM wParam, LPARAM lPa
                 case BTN_SALIR: {
                     if (MessageBox(vent, L"Estas Seguro que quieres salir?", L"Salir", MB_OKCANCEL | MB_ICONQUESTION) == IDOK) {
                         SendMessage(vent, WM_CLOSE, 0, 0);
+                        
                     }
                     break;
                 }
@@ -1068,6 +1062,7 @@ LRESULT CALLBACK VentanaPrincipal(HWND vent, UINT msg, WPARAM wParam, LPARAM lPa
        
         case WM_DESTROY: {
             PostQuitMessage(0);
+           
             break;
         }
        
@@ -1221,7 +1216,7 @@ LRESULT CALLBACK VentanaProductos(HWND VentProductos, UINT msg, WPARAM wParam, L
 
 
                         FILE *archivo_productos;
-                        archivo_productos = fopen("productos.dat", "a+");
+                        archivo_productos = fopen("Datos/productos.dat", "a+");
                         if(archivo_productos == NULL){
                         MessageBox(VentProductos, L"ERROR", L"ERROR AL CREAR EL ARCHIVO", MB_OKCANCEL);
                         return 1;
@@ -1359,7 +1354,7 @@ LRESULT CALLBACK VentanaProductos(HWND VentProductos, UINT msg, WPARAM wParam, L
                 d_productos[productoEncontrado].precioPES = d_productos[productoEncontrado].precioDOL * TASA_PES;
             
                 // Actualizar el archivo de productos
-                FILE *archivo_productos = fopen("productos.dat", "w");
+                FILE *archivo_productos = fopen("Datos/productos.dat", "w");
                 if (archivo_productos == NULL) {
                     MessageBox(VentProductos, L"Error al abrir el archivo de productos", L"Error", MB_ICONERROR | MB_OK);
                     break;
@@ -1430,7 +1425,7 @@ LRESULT CALLBACK VentanaProductos(HWND VentProductos, UINT msg, WPARAM wParam, L
                     cant_productos--;
                 
                     // Actualizar el archivo de productos
-                    FILE *archivo_productos = fopen("productos.dat", "w");
+                    FILE *archivo_productos = fopen("Datos/productos.dat", "w");
                     if (archivo_productos == NULL) {
                         MessageBox(VentProductos, L"Error al abrir el archivo de productos", L"Error", MB_ICONERROR | MB_OK);
                         break;
@@ -1471,7 +1466,7 @@ LRESULT CALLBACK VentanaProductos(HWND VentProductos, UINT msg, WPARAM wParam, L
                 }
 
                 case BTN_IMPRIMIR_PRODUCTOS: {
-                        FILE *archivo_cvs = fopen("ReporteProductos.csv", "w");
+                        FILE *archivo_cvs = fopen("Reportes/ReporteProductos.csv", "w");
                         if (archivo_cvs == NULL) {
                             MessageBox(VentProductos, L"Error al crear el archivo cvs", L"Error", MB_ICONERROR | MB_OK);
                             break;
@@ -1685,10 +1680,11 @@ ClientesEnListView(ListViewCliente);
                 GetDlgItemText(VentClientes, EDT_DIRECCION_CLIENTE, buffer, 200);
                 wcscpy_s(d_clientes[cant_clientes].direccion, 200, buffer);
 
-                d_clientes[cant_clientes].telefono = GetDlgItemInt(VentClientes, EDT_TELEFONO_CLIENTE, NULL, FALSE);
+                GetDlgItemText(VentClientes, EDT_TELEFONO_CLIENTE, buffer, 200);
+                wcscpy_s(d_clientes[cant_clientes].telefono, 200, buffer);
 
                 FILE *archivo_clientes;
-                archivo_clientes = fopen("clientes.dat", "a");
+                archivo_clientes = fopen("Datos/clientes.dat", "a");
                 if (archivo_clientes == NULL) {
                     MessageBox(VentClientes, L"ERROR", L"ERROR AL CREAR EL ARCHIVO", MB_OKCANCEL);
                     return 1;
@@ -1698,7 +1694,7 @@ ClientesEnListView(ListViewCliente);
                 fprintf(archivo_clientes, "Nombre: %ls\n", d_clientes[cant_clientes].nombre);
                 fprintf(archivo_clientes, "Apellido: %ls\n", d_clientes[cant_clientes].apellido);
                 fprintf(archivo_clientes, "Direccion: %ls\n", d_clientes[cant_clientes].direccion);
-                fprintf(archivo_clientes, "Telefono: %d\n", d_clientes[cant_clientes].telefono);
+                fprintf(archivo_clientes, "Telefono: %ls\n", d_clientes[cant_clientes].telefono);
                 fprintf(archivo_clientes, "---------------------\n");
 
                 fclose(archivo_clientes);
@@ -1722,11 +1718,33 @@ ClientesEnListView(ListViewCliente);
             }
             
             case BTN_LIMPIAR_CLIENTE:{
+                SetWindowText(GetDlgItem(VentClientes, EDT_NOMBRE_CLIENTE), L"");
+                SetWindowText(GetDlgItem(VentClientes, EDT_CEDULA_CLIENTE), L"");
+                SetWindowText(GetDlgItem(VentClientes, EDT_APELLIDO_CLIENTE), L"");
+                SetWindowText(GetDlgItem(VentClientes, EDT_DIRECCION_CLIENTE), L"");
+                SetWindowText(GetDlgItem(VentClientes, EDT_TELEFONO_CLIENTE), L"");
 
-                HWND nVentClientes = CreateWindowEx(0, L"CL_VentanaCliente", L"Clientes", WS_OVERLAPPEDWINDOW, 10,10,1080,720,NULL, NULL, instancia, NULL);
-                DestroyWindow(VentClientes);
-                ShowWindow(nVentClientes, SW_SHOW);
-                UpdateWindow(nVentClientes);
+                HWND EliminarCliente = GetDlgItem(VentClientes, BTN_ELIMINAR_CLIENTE);
+                if (EliminarCliente)
+                {
+                    DestroyWindow(EliminarCliente);
+                }
+
+                HWND EditarCliente = GetDlgItem(VentClientes, BTN_EDITAR_CLIENTE);
+                if(EditarCliente){
+                    DestroyWindow(EditarCliente);
+                }
+
+                HWND LimpiarCliente = GetDlgItem(VentClientes, BTN_LIMPIAR_CLIENTE);
+                if(LimpiarCliente){
+                    DestroyWindow(LimpiarCliente);
+                }
+                
+
+
+                CreateWindowEx(0, L"BUTTON", L"GUARDAR", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE, 380, 78, 150, 25, VentClientes, (HMENU)BTN_GUARDAR_CLIENTE, instancia, NULL);
+                CreateWindowEx(0, L"BUTTON", L"LIMPIAR", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE, 380, 150, 150, 25, VentClientes, (HMENU)BTN_LIMPIAR_CLIENTE, instancia, NULL);
+
 
                 break;
             }
@@ -1820,10 +1838,12 @@ ClientesEnListView(ListViewCliente);
                 GetDlgItemText(VentClientes, EDT_DIRECCION_CLIENTE, buffer, 200);
                 wcscpy_s(d_clientes[indiceCliente].direccion, 200, buffer);
 
-                d_clientes[indiceCliente].telefono = GetDlgItemInt(VentClientes, EDT_TELEFONO_CLIENTE, NULL, FALSE);
+                GetDlgItemText(VentClientes, EDT_TELEFONO_CLIENTE, buffer, 200);
+                wcscpy_s(d_clientes[indiceCliente].telefono, 200, buffer);
+
 
                 // Reescribir el archivo con todos los clientes actualizados
-                FILE *archivo_clientes = fopen("clientes.dat", "w");
+                FILE *archivo_clientes = fopen("Datos/clientes.dat", "w");
                 if(archivo_clientes == NULL){
                     MessageBox(VentClientes, L"Error al abrir el archivo de clientes", L"Error", MB_ICONERROR | MB_OK);
                     break;
@@ -1887,7 +1907,7 @@ ClientesEnListView(ListViewCliente);
             cant_clientes--;
 
             // Actualizar el archivo de clientes
-            FILE *archivo_clientes = fopen("clientes.dat", "w");
+            FILE *archivo_clientes = fopen("Datos/clientes.dat", "w");
             if (archivo_clientes == NULL) {
                 MessageBox(VentClientes, L"Error al abrir el archivo de clientes", L"Error", MB_ICONERROR | MB_OK);
                 break;
@@ -1924,7 +1944,7 @@ ClientesEnListView(ListViewCliente);
        
             case BTN_IMPRIMIR_CLIENTES:{
 
-                FILE *archivo_cvs = fopen("ReporteClientes.csv", "w");
+                FILE *archivo_cvs = fopen("Reportes/ReporteClientes.csv", "w");
                 if (archivo_cvs == NULL) {
                     MessageBox(VentClientes, L"Error al crear el archivo cvs", L"Error", MB_ICONERROR | MB_OK);
                     break;
@@ -2108,10 +2128,11 @@ LRESULT CALLBACK VentanaEmpleados(HWND VentEmpleados, UINT msg, WPARAM wParam, L
                         wcscpy_s(d_empleados[cant_empleados].cargo, 256, cargo_seleccionado);
                     }
 
-                    d_empleados[cant_empleados].telefono = GetDlgItemInt(VentEmpleados, EDT_TELEFONO_EMPLEADO, NULL, FALSE);
+                    GetDlgItemText(VentEmpleados, EDT_TELEFONO_EMPLEADO, buffer, 30);
+                    wcscpy_s(d_empleados[cant_empleados].telefono, 30, buffer);
 
                     FILE *archivo_empleados;
-                    archivo_empleados = fopen("empleados.dat", "a");
+                    archivo_empleados = fopen("Datos/empleados.dat", "a");
                     if (archivo_empleados == NULL) {
                         MessageBox(VentEmpleados, L"ERROR", L"ERROR AL CREAR EL ARCHIVO", MB_OKCANCEL);
                         return 1;
@@ -2123,7 +2144,7 @@ LRESULT CALLBACK VentanaEmpleados(HWND VentEmpleados, UINT msg, WPARAM wParam, L
                     fprintf(archivo_empleados, "Apellido: %ls\n", d_empleados[cant_empleados].apellido);
                     fprintf(archivo_empleados, "Direccion: %ls\n", d_empleados[cant_empleados].direccion);
                     fprintf(archivo_empleados, "Cargo: %ls\n", d_empleados[cant_empleados].cargo);
-                    fprintf(archivo_empleados, "Telefono: %d\n", d_empleados[cant_empleados].telefono);
+                    fprintf(archivo_empleados, "Telefono: %ls\n", d_empleados[cant_empleados].telefono);
                     fprintf(archivo_empleados, "---------------------\n");
 
                     fclose(archivo_empleados);
@@ -2171,8 +2192,8 @@ LRESULT CALLBACK VentanaEmpleados(HWND VentEmpleados, UINT msg, WPARAM wParam, L
                             if (index != CB_ERR) {
                                 SendDlgItemMessage(VentEmpleados, EDT_CARGO_EMPLEADO, CB_SETCURSEL, (WPARAM)index, 0);
                             }
-                            swprintf_s(buffer, 100, L"%d", d_empleados[i].telefono);
-                            SetWindowText(GetDlgItem(VentEmpleados, EDT_TELEFONO_EMPLEADO), buffer);
+
+                            SetWindowText(GetDlgItem(VentEmpleados, EDT_TELEFONO_EMPLEADO), d_empleados[i].telefono);
                             empleadoEncontrado = 1;
                             break;
                         }
@@ -2256,10 +2277,11 @@ LRESULT CALLBACK VentanaEmpleados(HWND VentEmpleados, UINT msg, WPARAM wParam, L
                         wcscpy_s(d_empleados[empleadoEncontrado].cargo, 256, cargo_seleccionado);
                     }
 
-                    d_empleados[empleadoEncontrado].telefono = GetDlgItemInt(VentEmpleados, EDT_TELEFONO_EMPLEADO, NULL, FALSE);
+                    GetDlgItemText(VentEmpleados, EDT_TELEFONO_EMPLEADO, buffer, 30);
+                    wcscpy_s(d_empleados[empleadoEncontrado].telefono, 30, buffer);
 
                     // Actualizar el archivo de empleados
-                    FILE *archivo_empleados = fopen("empleados.dat", "w");
+                    FILE *archivo_empleados = fopen("Datos/empleados.dat", "w");
                     if (archivo_empleados == NULL) {
                         MessageBox(VentEmpleados, L"Error al abrir el archivo de empleados", L"Error", MB_ICONERROR | MB_OK);
                         break;
@@ -2272,7 +2294,7 @@ LRESULT CALLBACK VentanaEmpleados(HWND VentEmpleados, UINT msg, WPARAM wParam, L
                         fprintf(archivo_empleados, "Apellido: %ls\n", d_empleados[i].apellido);
                         fprintf(archivo_empleados, "Direccion: %ls\n", d_empleados[i].direccion);
                         fprintf(archivo_empleados, "Cargo: %ls\n", d_empleados[i].cargo);
-                        fprintf(archivo_empleados, "Telefono: %d\n", d_empleados[i].telefono);
+                        fprintf(archivo_empleados, "Telefono: %ls\n", d_empleados[i].telefono);
                         fprintf(archivo_empleados, "---------------------\n");
                     }
 
@@ -2329,7 +2351,7 @@ LRESULT CALLBACK VentanaEmpleados(HWND VentEmpleados, UINT msg, WPARAM wParam, L
                     cant_empleados--;
 
                     // Actualizar el archivo de empleados
-                    FILE *archivo_empleados = fopen("empleados.dat", "w");
+                    FILE *archivo_empleados = fopen("Datos/empleados.dat", "w");
                     if (archivo_empleados == NULL) {
                         MessageBox(VentEmpleados, L"Error al abrir el archivo de empleados", L"Error", MB_ICONERROR | MB_OK);
                         break;
@@ -2342,7 +2364,7 @@ LRESULT CALLBACK VentanaEmpleados(HWND VentEmpleados, UINT msg, WPARAM wParam, L
                         fprintf(archivo_empleados, "Apellido: %ls\n", d_empleados[i].apellido);
                         fprintf(archivo_empleados, "Direccion: %ls\n", d_empleados[i].direccion);
                         fprintf(archivo_empleados, "Cargo: %ls\n", d_empleados[i].cargo);
-                        fprintf(archivo_empleados, "Telefono: %d\n", d_empleados[i].telefono);
+                        fprintf(archivo_empleados, "Telefono: %ls\n", d_empleados[i].telefono);
                         fprintf(archivo_empleados, "---------------------\n");
                     }
 
@@ -2370,7 +2392,7 @@ LRESULT CALLBACK VentanaEmpleados(HWND VentEmpleados, UINT msg, WPARAM wParam, L
 
                 case BTN_IMPRIMIR_EMPLEADOS:{
 
-                    FILE *archivo_cvs = fopen("ReporteEmpleados.csv", "w");
+                    FILE *archivo_cvs = fopen("Reporte/ReporteEmpleados.csv", "w");
                     if (archivo_cvs == NULL) {
                         MessageBox(VentEmpleados, L"Error al crear el archivo cvs", L"Error", MB_ICONERROR | MB_OK);
                         break;
@@ -2381,7 +2403,7 @@ LRESULT CALLBACK VentanaEmpleados(HWND VentEmpleados, UINT msg, WPARAM wParam, L
 
                     // Escribir datos de empleados
                     for (int i = 0; i < cant_empleados; i++) {
-                        fwprintf(archivo_cvs, L"%d;%d;%ls;%ls;%ls;%ls;%d\n",
+                        fwprintf(archivo_cvs, L"%d;%d;%ls;%ls;%ls;%ls;%ls\n",
                                  d_empleados[i].cedula_trabajador,
                                  d_empleados[i].numero_empleado,
                                  d_empleados[i].nombre,
@@ -2643,9 +2665,7 @@ LRESULT CALLBACK VentanaCrearFactura(HWND VentCrearFacturas, UINT msg, WPARAM wP
                                 SetWindowText(GetDlgItem(VentCrearFacturas, EDT_NOMBRE_FACTURA), d_clientes[i].nombre);
                                 SetWindowText(GetDlgItem(VentCrearFacturas, EDT_APELLIDO_FACTURA), d_clientes[i].apellido);
                                 SetWindowText(GetDlgItem(VentCrearFacturas, EDT_DIRECCION_FACTURA), d_clientes[i].direccion);
-                                swprintf_s(buffer, 100, L"%d", d_clientes[i].telefono);
-                                SetWindowText(GetDlgItem(VentCrearFacturas, EDT_TELEFONO_FACTURA), buffer);
-
+                                SetWindowText(GetDlgItem(VentCrearFacturas, EDT_TELEFONO_FACTURA), d_clientes[i].telefono);
                                 swprintf_s(buffer, 100, L"%s %s", d_clientes[i].nombre, d_clientes[i].apellido);
                                 SetWindowText(GetDlgItem(VentCrearFacturas, EDT_CLIENTE_FACTURA), buffer);
 
@@ -2752,11 +2772,13 @@ LRESULT CALLBACK VentanaCrearFactura(HWND VentCrearFacturas, UINT msg, WPARAM wP
                         swprintf_s(buffer, 128, L"%.2f", pago_totalbs);
                         SetWindowText(GetDlgItem(VentCrearFacturas, EDT_PAGO_TOTALBS), buffer);
                         
-                        // Restar la cantidad vendida en la estructura
+                        
                         d_productos[index].cantidad_disponible -= cantidad_a_agregar;
+                         
+                        
                         
                         // Actualizar el archivo de productos reescribiendo todos los registros
-                        FILE *archivo_productos = fopen("productos.dat", "w");
+                        FILE *archivo_productos = fopen("Datos/productos.dat", "w");
                         if(archivo_productos != NULL) {
                             for (int i = 0; i < cant_productos; i++) {
                                 fprintf(archivo_productos, "ID: %i\n", i);
@@ -2825,7 +2847,7 @@ LRESULT CALLBACK VentanaCrearFactura(HWND VentCrearFacturas, UINT msg, WPARAM wP
                             GetWindowText(GetDlgItem(VentCrearFacturas, EDT_APELLIDO_FACTURA), factura.cliente.apellido, 150);
                             GetWindowText(GetDlgItem(VentCrearFacturas, EDT_DIRECCION_FACTURA), factura.cliente.direccion, 200);
                             GetWindowText(GetDlgItem(VentCrearFacturas, EDT_TELEFONO_FACTURA), temp, 100);
-                            factura.cliente.telefono = _wtoi(temp);
+                          
                     
                             // Incrementar la cantidad de compras del cliente en la estructura global
                             for (int i = 0; i < cant_clientes; i++) {
@@ -2927,7 +2949,7 @@ LRESULT CALLBACK VentanaCrearFactura(HWND VentCrearFacturas, UINT msg, WPARAM wP
                         }
                         
                         // Guardar la factura en el archivo "facturas.dat" (modo append)
-                        FILE *archivo_facturas = fopen("facturas.dat", "a");
+                        FILE *archivo_facturas = fopen("Datos/facturas.dat", "a");
                         if (archivo_facturas != NULL) {
                             fprintf(archivo_facturas, "ID Hipermercado: %ls\n", factura.ID_hipermercado);
                             fprintf(archivo_facturas, "Número Factura: %d\n", factura.numero_factura);
@@ -2949,7 +2971,7 @@ LRESULT CALLBACK VentanaCrearFactura(HWND VentCrearFacturas, UINT msg, WPARAM wP
                             break;
                         }
                     
-                        FILE *archivo_cajas = fopen("cajas.dat", "w");
+                        FILE *archivo_cajas = fopen("Datos/cajas.dat", "w");
                 if (archivo_cajas != NULL) {
                     for (int i = 0; i < cant_cajas; i++) {
                         fprintf(archivo_cajas, "Numero Caja: %d\n", d_cajas[i].numero_caja);
@@ -3339,7 +3361,7 @@ LRESULT CALLBACK VentanaVentas(HWND VentVentas, UINT msg, WPARAM wParam, LPARAM 
 
             ListViewVentas = CreateWindowEx(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"Ventas",
                 WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_SORTASCENDING,
-                450, 20, 500, 420, VentVentas, NULL, instancia, NULL);
+                450, 20, 750, 420, VentVentas, NULL, instancia, NULL);
             ListView_SetExtendedListViewStyle(ListViewVentas,
                 LVS_EX_GRIDLINES | LVS_EX_JUSTIFYCOLUMNS | LVS_EX_FULLROWSELECT | LVS_EX_HEADERINALLVIEWS);
             
@@ -3762,6 +3784,7 @@ LRESULT CALLBACK VentanaCajas(HWND VentCajas, UINT msg, WPARAM wParam, LPARAM lP
             
             CreateWindowEx(0, L"BUTTON", L"ATRAS", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE, 250, 580, 150, 30, VentCajas, (HMENU)BTN_ATRAS8, instancia, NULL);
             CreateWindowEx(0, L"BUTTON", L"GUARDAR", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE, 420, 580, 150, 30, VentCajas, (HMENU)BTN_GUARDAR_CAJA, instancia, NULL);
+            CreateWindowEx(0, L"BUTTON", L"IMPRIMIR CAJAS", BS_PUSHBUTTON | BS_CENTER | WS_VISIBLE | WS_CHILD, 410, 620, 170, 30, VentCajas, (HMENU)BTN_IMPRIMIR_CAJA, instancia, NULL);
             CreateWindowEx(0, L"BUTTON", L"LIMPIAR", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE, 590, 580, 150, 30, VentCajas, (HMENU)BTN_LIMPIAR_CAJA, instancia, NULL);
             
             }
@@ -3807,8 +3830,7 @@ LRESULT CALLBACK VentanaCajas(HWND VentCajas, UINT msg, WPARAM wParam, LPARAM lP
                         SetWindowText(GetDlgItem(VentCajas, EDT_NOMBRE_ENCARGADO), d_cajas[i].encargador.nombre);
                         SetWindowText(GetDlgItem(VentCajas, EDT_APELLIDO_ENCARGADO), d_cajas[i].encargador.apellido);
                         SetWindowText(GetDlgItem(VentCajas, EDT_DIRECCION_ENCARGADO), d_cajas[i].encargador.direccion);
-                        swprintf_s(buffer, 100, L"%d", d_cajas[i].encargador.telefono);
-                        SetWindowText(GetDlgItem(VentCajas, EDT_TELEFONO_ENCARGADO), buffer);
+                        SetWindowText(GetDlgItem(VentCajas, EDT_TELEFONO_ENCARGADO), d_cajas[i].encargador.telefono);
 
                         caja_encontrada = 1;
                         break;
@@ -3856,8 +3878,7 @@ LRESULT CALLBACK VentanaCajas(HWND VentCajas, UINT msg, WPARAM wParam, LPARAM lP
                             SetWindowText(GetDlgItem(VentCajas, EDT_NOMBRE_ENCARGADO), d_empleados[i].nombre);
                             SetWindowText(GetDlgItem(VentCajas, EDT_APELLIDO_ENCARGADO), d_empleados[i].apellido);
                             SetWindowText(GetDlgItem(VentCajas, EDT_DIRECCION_ENCARGADO), d_empleados[i].direccion);
-                            swprintf_s(buffer, 100, L"%d", d_empleados[i].telefono);
-                            SetWindowText(GetDlgItem(VentCajas, EDT_TELEFONO_ENCARGADO), buffer);
+                            SetWindowText(GetDlgItem(VentCajas, EDT_TELEFONO_ENCARGADO), d_empleados[i].telefono);
                             EncargadoEncontrado = 1;
                             break;
                             }
@@ -3906,11 +3927,11 @@ LRESULT CALLBACK VentanaCajas(HWND VentCajas, UINT msg, WPARAM wParam, LPARAM lP
                     GetDlgItemText(VentCajas, EDT_DIRECCION_ENCARGADO, buffer, 200);
                     wcscpy_s(d_cajas[cant_cajas].encargador.direccion, 100, buffer);
 
-                    GetDlgItemText(VentCajas, EDT_TELEFONO_ENCARGADO, buffer, 200);
-                    d_cajas[cant_cajas].encargador.telefono = _wtoi(buffer);
+                    GetDlgItemText(VentCajas, EDT_TELEFONO_ENCARGADO, buffer, 30);
+                    wcscpy_s(d_cajas[cant_cajas].encargador.telefono, 30, buffer);
 
                     FILE *archivo_cajas;
-                    archivo_cajas = fopen("cajas.dat", "a");
+                    archivo_cajas = fopen("Datos/cajas.dat", "a");
                     if (archivo_cajas == NULL) {
                         MessageBox(VentCajas, L"ERROR", L"ERROR AL CREAR EL ARCHIVO", MB_OKCANCEL);
                         break;
@@ -4013,11 +4034,11 @@ LRESULT CALLBACK VentanaCajas(HWND VentCajas, UINT msg, WPARAM wParam, LPARAM lP
                         GetDlgItemText(VentCajas, EDT_DIRECCION_ENCARGADO, buffer, 100);
                         wcscpy_s(d_cajas[caja_encontrada].encargador.direccion, 100,buffer);
 
-                        GetDlgItemText(VentCajas, EDT_TELEFONO_ENCARGADO, buffer, 100);
-                        d_cajas[caja_encontrada].encargador.telefono = _wtoi(buffer);
+                        GetDlgItemText(VentCajas, EDT_TELEFONO_ENCARGADO, buffer, 30);
+                        wcscpy_s(d_cajas[caja_encontrada].encargador.telefono, 30,buffer);
 
 
-                        FILE *archivo_cajas = fopen("cajas.dat", "w");
+                        FILE *archivo_cajas = fopen("Datos/cajas.dat", "w");
                         if(archivo_cajas == NULL){
 
                             MessageBox(VentCajas, L"Error al abrir el archivo de cajas", L"Error", MB_ICONERROR | MB_OK);
@@ -4090,7 +4111,7 @@ LRESULT CALLBACK VentanaCajas(HWND VentCajas, UINT msg, WPARAM wParam, LPARAM lP
                     }
                     cant_cajas--;
 
-                    FILE *archivo_cajas = fopen("cajas.dat", "w");
+                    FILE *archivo_cajas = fopen("Datos/cajas.dat", "w");
                     if(archivo_cajas == NULL){
                         MessageBox(VentCajas, L"Error al abrir el archivo de cajas", L"Error", MB_ICONERROR | MB_OK);
                         break;
@@ -4122,6 +4143,31 @@ LRESULT CALLBACK VentanaCajas(HWND VentCajas, UINT msg, WPARAM wParam, LPARAM lP
                     break;
                 }
 
+                case BTN_IMPRIMIR_CAJA:{
+
+                    FILE *reporte_caja = fopen("Reportes/ReporteCajas.csv", "w+");
+                    if(reporte_caja == NULL){
+                        MessageBox(VentCajas, L"El archivo .CSV no se ha abierto correctamente", L"ERROR", MB_ICONERROR|MB_OK);
+                        break;
+                    }
+
+                    fwprintf(reporte_caja, L"Numero Caja; Monto Bs; Monto Dolares; Monto Euros; Monto Pesos; Encargado\n");
+
+                    
+                    
+                    for (int i = 0; i < cant_cajas; i++)
+                    {
+                        
+                        fwprintf(reporte_caja, L"%i; %.2f; %.2f; %.2f; %.2f; %ls", 
+                            d_cajas[i].numero_caja, d_cajas[i].bolivares_facturados, d_cajas[i].dolares_facturados, d_cajas[i].euros_facturados,
+                            d_cajas[i].pesos_facturados, d_cajas[i].encargador.nombre);
+                    }
+
+                    fclose(reporte_caja);
+                    MessageBox(VentCajas, L"Reporte de cajas generado con exito", L"EXITO", MB_OK);
+                    
+                    break;
+                }
 
             }
           break;
@@ -4145,6 +4191,10 @@ LRESULT CALLBACK VentanaCajas(HWND VentCajas, UINT msg, WPARAM wParam, LPARAM lP
 //=======================================================================================
 
 int WINAPI wWinMain(HINSTANCE hInstancia, HINSTANCE hInstanciaPrevia, PWSTR pCmdLine, int nCmdShow) {
+
+    mkdir("Datos");
+    mkdir("Reportes");
+
    CargarProductos();
    CargarClientes();
    CargarEmpleado();
