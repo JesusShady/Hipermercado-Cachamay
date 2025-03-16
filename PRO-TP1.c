@@ -1723,12 +1723,6 @@ ClientesEnListView(ListViewCliente);
             
             case BTN_LIMPIAR_CLIENTE:{
 
-                SetWindowText(GetDlgItem(VentClientes, EDT_CEDULA_CLIENTE), L"");
-                SetWindowText(GetDlgItem(VentClientes, EDT_NOMBRE_CLIENTE), L"");
-                SetWindowText(GetDlgItem(VentClientes, EDT_APELLIDO_CLIENTE), L"");
-                SetWindowText(GetDlgItem(VentClientes, EDT_DIRECCION_CLIENTE), L"");
-                SetWindowText(GetDlgItem(VentClientes, EDT_TELEFONO_CLIENTE), L"");
-
                 HWND nVentClientes = CreateWindowEx(0, L"CL_VentanaCliente", L"Clientes", WS_OVERLAPPEDWINDOW, 10,10,1080,720,NULL, NULL, instancia, NULL);
                 DestroyWindow(VentClientes);
                 ShowWindow(nVentClientes, SW_SHOW);
