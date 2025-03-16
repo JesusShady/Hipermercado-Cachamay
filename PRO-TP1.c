@@ -21,7 +21,7 @@ TELEFONO: 0414-0463588 //// PROYECTO CREADO POR JESUS COLMENARES //// Universida
 #include <commctrl.h>
 #include <sys/stat.h>
 
-#define _WIN32_WINNT 0x0600
+#define _WIN32_WINNT 0x0603
 
 #define CAJAS 5
 #define IVA 0.16
@@ -943,8 +943,7 @@ LRESULT CALLBACK VentanaPrincipal(HWND vent, UINT msg, WPARAM wParam, LPARAM lPa
     switch (msg) {
         case WM_CREATE: {
             instancia = ((LPCREATESTRUCT)lParam)->hInstance;
-            SetWindowTheme(vent, L"Explorer", NULL);
-
+           
             CreateWindowEx(0, L"BUTTON", L"PRODUCTOS", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE, 100, 120, 150, 40, vent, (HMENU)BTN_PRODUCTOS, instancia, NULL);
             CreateWindowEx(0, L"BUTTON", L"EMPLEADOS", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE, 100, 240, 150, 40, vent, (HMENU)BTN_TRABAJADORES, instancia, NULL);
             CreateWindowEx(0, L"BUTTON", L"VENTAS", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE, 100, 360, 150, 40, vent, (HMENU)BTN_VENTAS, instancia, NULL);
@@ -1309,12 +1308,6 @@ LRESULT CALLBACK VentanaProductos(HWND VentProductos, UINT msg, WPARAM wParam, L
                         DestroyWindow(hGuardarButton);
                     }
 
-                    //Eliminar el botón de limpiar
-                    HWND hLimpiarButton = GetDlgItem(VentProductos, BTN_LIMPIARPRODUCTO);
-                    if(hLimpiarButton){
-                        DestroyWindow(hLimpiarButton);
-                    }
-
                     // Crear botón de editar producto
                     CreateWindowEx(0, L"BUTTON", L"EDITAR PRODUCTO", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE, 330, 205, 150, 40, VentProductos, (HMENU)BTN_EDITAR_PRODUCTO, instancia, NULL);
 
@@ -1504,6 +1497,16 @@ LRESULT CALLBACK VentanaProductos(HWND VentProductos, UINT msg, WPARAM wParam, L
                         break;
                     }
 
+                case BTN_LIMPIARPRODUCTO: {
+                    SetWindowText(GetDlgItem(VentProductos, EDT_CODIGO_PRODUCTO), L"");
+                    SetWindowText(GetDlgItem(VentProductos, EDT_NOMBRE_PRODUCTO), L"");
+                    SetWindowText(GetDlgItem(VentProductos, EDT_CANTIDADISPONIBLE), L"");
+                    SetWindowText(GetDlgItem(VentProductos, EDT_PRECIO_DOLAR_PRODUCTO), L"");
+                    SetWindowText(GetDlgItem(VentProductos, EDT_PRECIO_BS_PRODUCTO), L"");
+                    SetWindowText(GetDlgItem(VentProductos, EDT_PRECIO_EUR_PRODUCTO), L"");
+                    SetWindowText(GetDlgItem(VentProductos, EDT_PRECIO_PES_PRODUCTO), L"");
+                    break;
+                }
 
         } 
 
@@ -1706,9 +1709,14 @@ ClientesEnListView(ListViewCliente);
                 SetWindowText(GetDlgItem(VentClientes, EDT_NOMBRE_CLIENTE), L"");
                 SetWindowText(GetDlgItem(VentClientes, EDT_APELLIDO_CLIENTE), L"");
                 SetWindowText(GetDlgItem(VentClientes, EDT_DIRECCION_CLIENTE), L"");
-                 SetWindowText(GetDlgItem(VentClientes, EDT_TELEFONO_CLIENTE), L"");
-                
+                SetWindowText(GetDlgItem(VentClientes, EDT_TELEFONO_CLIENTE), L"");
 
+                
+                DestroyWindow(VentClientes);
+                HWND nVentClientes = CreateWindowEx(0, L"CL_VentanaCliente", L"Clientes", WS_OVERLAPPEDWINDOW, 10,10,1080,720,NULL, NULL, instancia, NULL);
+                ShowWindow(nVentClientes, SW_SHOW);
+                UpdateWindow(nVentClientes);
+                
 
                 break;
             }
@@ -1719,7 +1727,12 @@ ClientesEnListView(ListViewCliente);
                 SetWindowText(GetDlgItem(VentClientes, EDT_NOMBRE_CLIENTE), L"");
                 SetWindowText(GetDlgItem(VentClientes, EDT_APELLIDO_CLIENTE), L"");
                 SetWindowText(GetDlgItem(VentClientes, EDT_DIRECCION_CLIENTE), L"");
-                 SetWindowText(GetDlgItem(VentClientes, EDT_TELEFONO_CLIENTE), L"");
+                SetWindowText(GetDlgItem(VentClientes, EDT_TELEFONO_CLIENTE), L"");
+
+                HWND nVentClientes = CreateWindowEx(0, L"CL_VentanaCliente", L"Clientes", WS_OVERLAPPEDWINDOW, 10,10,1080,720,NULL, NULL, instancia, NULL);
+                DestroyWindow(VentClientes);
+                ShowWindow(nVentClientes, SW_SHOW);
+                UpdateWindow(nVentClientes);
 
                 break;
             }
@@ -1769,6 +1782,8 @@ ClientesEnListView(ListViewCliente);
 
                 // Crear botón de eliminar cliente
                 CreateWindowEx(0, L"BUTTON", L"ELIMINAR CLIENTE", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE, 380, 150, 150, 25, VentClientes, (HMENU)BTN_ELIMINAR_CLIENTE, instancia, NULL);
+                
+                CreateWindowEx(0, L"BUTTON", L"LIMPIAR DATOS", BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | BS_CENTER, 125, 295, 120, 25, VentClientes, (HMENU)BTN_LIMPIAR_CLIENTE, instancia, NULL);
 
                 break;
             }
